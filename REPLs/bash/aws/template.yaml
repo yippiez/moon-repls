@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  BashReplFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: function.handler
+      Runtime: provided.al2
+      Events:
+        Health:
+          Type: Api
+          Properties:
+            Path: /api/health
+            Method: GET
+        Exec:
+          Type: Api
+          Properties:
+            Path: /api/exec/{_src}
+            Method: GET

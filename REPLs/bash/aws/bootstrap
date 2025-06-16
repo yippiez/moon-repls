@@ -1,0 +1,22 @@
+#!/bin/sh
+# Custom runtime entry-point (must be executable)
+
+# 1. source the handler script named in _HANDLER
+source "$LAMBDA_TASK_ROOT/$(echo "$_HANDLER" | cut -d. -f1).sh"
+
+# 2. put our helper binaries (jq) on PATH
+export PATH="$LAMBDA_TASK_ROOT/bin:$PATH"
+
+# 3. main event loop
+while true; do
+  HEADERS=$(mktemp)
+  EVENT=$(curl -sSL -LD "$HEADERS" \
+          "http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/next")
+  REQ_ID=$(grep -Fi Lambda-Runtime-Aws-Request-Id "$HEADERS" \
+           | tr -d '[:space:]' | cut -d: -f2)
+
+  RESP=$(handler "$EVENT")          # call Bash function in function.sh
+
+  curl -sS "http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/${REQ_ID}/response" \
+       -d "$RESP"
+done
